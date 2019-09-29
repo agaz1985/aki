@@ -9,7 +9,7 @@ import torch
 
 from pathlib import Path
 
-from aki.clustering.fuzzy_c_means import FuzzyCMeans
+from aki.unsupervised_learning.cluster_analysis.fuzzy_c_means import FuzzyCMeans
 from aki.utils.filesystem import load_image
 from aki.utils.pyotrch import get_device
 
@@ -32,32 +32,32 @@ def main(parameters: dict):
         # Run the fcm sci-kit fuzzy implementation.
         logger.info("Running FCM sci-kit fuzzy implementation...")
         start = time.time()
-        sk_centroids, sk_membership, _, _, _, _, _ = fuzz.cluster.cmeans(input_data,
-                                                                         parameters['n_clusters'],
-                                                                         parameters['fuzziness'],
-                                                                         error=parameters['error'],
-                                                                         maxiter=parameters['max_iterations'],
-                                                                         init=None)
+        _, sk_membership, _, _, _, _, _ = fuzz.cluster.cmeans(input_data,
+                                                              parameters['n_clusters'],
+                                                              parameters['fuzziness'],
+                                                              error=parameters['error'],
+                                                              maxiter=parameters['max_iterations'],
+                                                              init=None)
         end = time.time()
         running_time['skfuzzy'].append(round((end - start), 2))
 
         # Run the fcm pytorch implementation.
         logger.info("Running FCM PyTorch implementation...")
-        fcm_pytorch = FuzzyCMeans(parameters['device'])
+        aki_fcm = FuzzyCMeans(parameters['device'])
         input_data_tensor = torch.from_numpy(input_data.T).unsqueeze(dim=0).float().to(parameters['device'])
         start = time.time()
-        pytorch_centroids, _, pytorch_segmentation = fcm_pytorch.fit(input_data_tensor,
-                                                                     n_clusters=parameters['n_clusters'],
-                                                                     fuzziness=parameters['fuzziness'],
-                                                                     max_iterations=parameters['max_iterations'],
-                                                                     eps=parameters['error'])
+        _, aki_membership = aki_fcm.fit(input_data_tensor,
+                                        n_clusters=parameters['n_clusters'],
+                                        fuzziness=parameters['fuzziness'],
+                                        max_iterations=parameters['max_iterations'],
+                                        eps=parameters['error'])
         end = time.time()
         running_time['aki'].append(round((end - start), 2))
 
         for idx in range(3):
             ax[image_index][0].imshow(image, cmap='gray')
             ax[image_index][1].imshow(np.argmax(sk_membership, axis=0).reshape(image.shape))
-            ax[image_index][2].imshow(pytorch_segmentation.reshape(image.shape))
+            ax[image_index][2].imshow(np.argmax(aki_membership.detach().cpu().numpy(), axis=2).reshape(image.shape))
 
         ax[image_index][0].set_title(f"input image - {image_size[image_index]}")
         ax[image_index][1].set_title(
@@ -75,6 +75,6 @@ if __name__ == "__main__":
                           'fuzziness': 2.0,
                           'error': 1e-3,
                           'device': get_device(),
-                          'input_list': ["../data/blue_orange_small.jpg", "../data/blue_orange_big.jpg"]}
+                          'input_list': ["../../data/blue_orange_small.jpg", "../../data/blue_orange_big.jpg"]}
 
     main(example_parameters)
