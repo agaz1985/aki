@@ -6,6 +6,9 @@ from aki.utils.model import ModelBase
 
 
 class FuzzyCMeans(ModelBase):
+    """
+    PyTorch implementation of the fuzzy c-means clustering algorithm.
+    """
     def __init__(self, device: torch.device):
         super().__init__()
         self._device = device
@@ -34,7 +37,7 @@ class FuzzyCMeans(ModelBase):
     def fit(self, x: torch.Tensor, n_clusters: int, fuzziness: float = 2.0, max_iterations: int = 1000,
             eps: float = 5e-3):
         """
-        Run the fuzzy c-means cluster_analysis fit on the input data.
+        Run the fuzzy c-means cluster analysis fit on the input data.
         :param x: input data as a Tensor with dimensions [batch, n_samples, n_features].
         :param n_clusters: number of clusters.
         :param fuzziness: fuzzy level [1.25 - 2.0].
@@ -52,7 +55,7 @@ class FuzzyCMeans(ModelBase):
             self._compute_centroids(x)
             # Update the fuzzy partition.
             self._update_membership_matrix(x)
-            # Check the termination condition
+            # Check the termination condition.
             error = 0 if self._last_c is None else torch.dist(self._last_c, self._c)
             self._fit_converged = False if self._last_c is None else error < eps
             self._last_c = self._c.detach()
