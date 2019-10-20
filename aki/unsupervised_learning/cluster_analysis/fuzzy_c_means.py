@@ -9,20 +9,15 @@ class FuzzyCMeans(ModelBase):
     """
     PyTorch implementation of the fuzzy c-means clustering algorithm.
     """
-    def __init__(self, device: torch.device):
-        super().__init__()
-        self._device = device
-        self._logger.debug(f"Using device: {device}.")
-        self._fit_converged = False
-        self._last_c = None
 
-    def _init(self, n_clusters: int, n_samples: int, n_features: int, fuzziness: float):
+    def __init__(self, device: torch.device):
+        super().__init__(device)
+
+    def _init_parameters(self, n_clusters: int, n_samples: int, n_features: int, fuzziness: float):
         self._n_clusters = n_clusters
         self._p = fuzziness
         self._w = Dirichlet(torch.ones(self._n_clusters)).sample([n_samples]).to(self._device)
         self._c = torch.zeros([n_clusters, n_features]).to(self._device)
-        self._last_c = None
-        self._fit_converged = False
 
     def _compute_centroids(self, x):
         fuzzy_w = self._w ** self._p
@@ -47,24 +42,27 @@ class FuzzyCMeans(ModelBase):
         """
         n_batches, n_samples, n_features = x.shape[0], x.shape[1], x.shape[2]
         x = x.reshape([n_batches * n_samples, n_features])
-        self._init(n_clusters, n_samples * n_batches, n_features, fuzziness)
+        self._init_parameters(n_clusters, n_samples * n_batches, n_features, fuzziness)
 
         iteration = 0
-        while not self._fit_converged and iteration < max_iterations:
+        fit_converged = False
+        last_c = None
+        while not fit_converged and iteration < max_iterations:
             # Compute the cluster centroids.
             self._compute_centroids(x)
             # Update the fuzzy partition.
             self._update_membership_matrix(x)
             # Check the termination condition.
-            error = 0 if self._last_c is None else torch.dist(self._last_c, self._c)
-            self._fit_converged = False if self._last_c is None else error < eps
-            self._last_c = self._c.detach()
+            error = 0 if last_c is None else torch.dist(last_c, self._c)
+            fit_converged = False if last_c is None else error < eps
+            last_c = self._c.detach()
             self._logger.debug(f"Iteration {iteration}, mean error: {error}")
             iteration += 1
 
+        self._is_fit = True
         return self._c, self._w.unsqueeze(dim=0).view([n_batches, n_samples, self._n_clusters])
 
-    def predict(self, x):
+    def _predict_implementation(self, x):
         n_batches, n_samples, n_features = x.shape[0], x.shape[1], x.shape[2]
         x = x.reshape([n_batches * n_samples, n_features])
         self._update_membership_matrix(x)
