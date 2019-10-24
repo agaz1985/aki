@@ -56,7 +56,7 @@ class FuzzyCMeans(ModelBase):
             # Check the termination condition.
             error = 0 if last_c is None else torch.dist(last_c, self._c)
             fit_converged = False if last_c is None else error < eps
-            last_c = self._c.detach()
+            last_c = self._c.detach().clone()
             self._logger.debug(f"Iteration {iteration}, mean error: {error}")
             iteration += 1
 

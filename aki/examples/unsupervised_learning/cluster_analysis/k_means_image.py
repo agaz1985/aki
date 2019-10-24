@@ -68,8 +68,8 @@ def main(parameters: dict):
 if __name__ == "__main__":
     # Define the example parameters.
     example_parameters = {'n_clusters': 10,
-                          'max_iterations': 300,
-                          'error': 1e-4,
+                          'max_iterations': 100,
+                          'error': 1e-3,
                           'device': get_device(),
                           'input_list': ["../../data/blue_orange_small.jpg", "../../data/blue_orange_big.jpg"]}
 
