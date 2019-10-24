@@ -24,8 +24,9 @@ class FuzzyCMeans(ModelBase):
         self._c.data = (torch.mm(fuzzy_w.T, x) / torch.sum(fuzzy_w, dim=0).unsqueeze(dim=1))
 
     def _update_membership_matrix(self, x):
-        exponent = 2.0 / (self._p - 1.0)
-        distance = torch.norm(x.unsqueeze(dim=1).repeat(1, self._c.shape[0], 1) - self._c.unsqueeze(dim=0), 2, dim=2)
+        exponent = 1.0 / (self._p - 1.0)
+        distance = torch.norm(x.unsqueeze(dim=1).repeat(1, self._c.shape[0], 1) - self._c.unsqueeze(dim=0), 2,
+                              dim=2) ** 2
         numerator = (1 / (distance ** exponent))
         self._w.data = numerator / torch.sum(numerator, dim=1).unsqueeze(dim=1)
 
