@@ -39,7 +39,7 @@ def main(parameters: dict):
         end = time.time()
         running_time['scikit'].append(round((end - start), 2))
 
-        # Run the fcm PyTorch implementation.
+        # Run the k-means PyTorch implementation.
         logger.info("Running k-means PyTorch implementation...")
         aki_km = KMeans(parameters['device'])
         input_data_tensor = torch.from_numpy(input_data).unsqueeze(dim=0).float().to(parameters['device'])

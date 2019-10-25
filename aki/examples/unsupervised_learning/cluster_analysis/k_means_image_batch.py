@@ -31,7 +31,6 @@ def main(parameters: dict):
     input_data = np.expand_dims(image.flatten(), axis=0)
 
     # Create a batch using the same image.
-
     input_batch = np.stack([input_data] * parameters['batch_size'], axis=0)
 
     # Run the k-means sci-kit implementation.
@@ -45,7 +44,7 @@ def main(parameters: dict):
     end = time.time()
     running_time['scikit'].append(round((end - start), 2))
 
-    # Run the k-means pytorch implementation.
+    # Run the k-means PyTorch implementation.
     logger.info("Running k-means PyTorch implementation...")
     aki_km = KMeans(parameters['device'])
     input_data_tensor = torch.from_numpy(input_batch.swapaxes(1, 2)).float().to(parameters['device'])

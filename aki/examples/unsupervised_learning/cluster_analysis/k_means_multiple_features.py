@@ -32,7 +32,7 @@ def main(parameters):
     end = time.time()
     sk_time = round((end - start) * 1e3, 2)
 
-    # Run the fcm pytorch implementation.
+    # Run the k-means PyTorch implementation.
     logger.info("Running PyTorch k-means implementation...")
     aki_km = KMeans(parameters['device'])
     tensor_data = torch.from_numpy(cluster_data.T).unsqueeze(dim=0).float().to(parameters['device'])
