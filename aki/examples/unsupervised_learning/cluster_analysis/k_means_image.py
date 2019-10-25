@@ -17,7 +17,7 @@ logger = logging.getLogger('aki_logger')
 
 
 def main(parameters: dict):
-    running_time = {'skkmeans': [], 'aki': []}
+    running_time = {'scikit': [], 'aki': []}
     image_size = ['small', 'big']
 
     # Create the sub-plots.
@@ -37,14 +37,14 @@ def main(parameters: dict):
                                    tol=parameters['error'],
                                    init='random').fit(input_data).labels_
         end = time.time()
-        running_time['skkmeans'].append(round((end - start), 2))
+        running_time['scikit'].append(round((end - start), 2))
 
         # Run the fcm PyTorch implementation.
-        logger.info("Running KM PyTorch implementation...")
-        aki_fcm = KMeans(parameters['device'])
+        logger.info("Running k-means PyTorch implementation...")
+        aki_km = KMeans(parameters['device'])
         input_data_tensor = torch.from_numpy(input_data).unsqueeze(dim=0).float().to(parameters['device'])
         start = time.time()
-        _, aki_distance_map = aki_fcm.fit(input_data_tensor,
+        _, aki_distance_map = aki_km.fit(input_data_tensor,
                                           n_clusters=parameters['n_clusters'],
                                           max_iterations=parameters['max_iterations'],
                                           eps=parameters['error'])
@@ -58,7 +58,7 @@ def main(parameters: dict):
 
         ax[image_index][0].set_title(f"input image - {image_size[image_index]}")
         ax[image_index][1].set_title(
-            f"{parameters['n_clusters']} classes clustered. [skkmeans ~{running_time['skkmeans'][image_index]} s.]")
+            f"{parameters['n_clusters']} classes clustered. [scikit ~{running_time['scikit'][image_index]} s.]")
         ax[image_index][2].set_title(
             f"{parameters['n_clusters']} classes clustered [aki ~{running_time['aki'][image_index]} s.]")
 

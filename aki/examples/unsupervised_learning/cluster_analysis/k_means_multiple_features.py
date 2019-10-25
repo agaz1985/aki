@@ -23,35 +23,42 @@ def main(parameters):
     cluster_data = np.vstack([x_points, y_points])
 
     # Run the sci-kit k-means implementation.
-    logger.info("Running sci-kit k-means implementation...")
+    logger.info("Running scikit k-means implementation...")
     start = time.time()
-    sk_centroids = cluster.KMeans(n_clusters=parameters['n_clusters'],
-                                  max_iter=parameters['max_iterations'],
-                                  tol=parameters['error'],
-                                  init='random').fit(cluster_data.T).cluster_centers_
+    sk_result = cluster.KMeans(n_clusters=parameters['n_clusters'],
+                               max_iter=parameters['max_iterations'],
+                               tol=parameters['error'],
+                               init='random').fit(cluster_data.T)
     end = time.time()
     sk_time = round((end - start) * 1e3, 2)
 
     # Run the fcm pytorch implementation.
     logger.info("Running PyTorch k-means implementation...")
-    aki_fcm = KMeans(parameters['device'])
+    aki_km = KMeans(parameters['device'])
     tensor_data = torch.from_numpy(cluster_data.T).unsqueeze(dim=0).float().to(parameters['device'])
     start = time.time()
-    aki_centroids, _ = aki_fcm.fit(tensor_data,
-                                   n_clusters=parameters['n_clusters'],
-                                   max_iterations=parameters['max_iterations'],
-                                   eps=parameters['error'])
+    aki_centroids, aki_distance = aki_km.fit(tensor_data,
+                                             n_clusters=parameters['n_clusters'],
+                                             max_iterations=parameters['max_iterations'],
+                                             eps=parameters['error'])
     end = time.time()
     pytorch_time = round((end - start) * 1e3, 2)
+
+    # Retrieve scikit results.
+    sk_centroids = sk_result.cluster_centers_
+    sk_labels = sk_result.labels_
+
+    # Retrieve aki results.
     aki_centroids = aki_centroids.detach().cpu().numpy()
+    aki_labels = np.argmin(aki_distance.detach().cpu().numpy().squeeze(), axis=-1)
 
     # Visualize the test data.
     fig, ax = plt.subplots(1, 2, figsize=(15, 15))
     colors = ['b', 'orange', 'g', 'r', 'c', 'm', 'y', 'k', 'Brown', 'ForestGreen']
 
     for idx, label in enumerate(range(3)):
-        ax[0].plot(x_points[labels == label], y_points[labels == label], '.', color=colors[label])
-        ax[1].plot(x_points[labels == label], y_points[labels == label], '.', color=colors[label])
+        ax[0].plot(x_points[sk_labels == label], y_points[sk_labels == label], '.', color=colors[label])
+        ax[1].plot(x_points[aki_labels == label], y_points[aki_labels == label], '.', color=colors[label])
 
     ax[0].plot(sk_centroids[0, 0], sk_centroids[0, 1], 'X', color='red')
     ax[0].plot(sk_centroids[1, 0], sk_centroids[1, 1], 'X', color='red')
@@ -61,8 +68,10 @@ def main(parameters):
     ax[1].plot(aki_centroids[1, 0], aki_centroids[1, 1], 'X', color='red')
     ax[1].plot(aki_centroids[2, 0], aki_centroids[2, 1], 'X', color='red')
 
-    ax[0].set_title(f"Test data: {n_points} points x {parameters['n_clusters']} clusters. [sklearn ~{sk_time} ms.]")
-    ax[1].set_title(f"Test data: {n_points} points x {parameters['n_clusters']} clusters. [aki ~{pytorch_time} ms.]")
+    ax[0].set_title(
+        f"Test data: {n_points} points x {parameters['n_clusters']} clusters. [scikit ~{sk_time} ms.]")
+    ax[1].set_title(
+        f"Test data: {n_points} points x {parameters['n_clusters']} clusters. [aki ~{pytorch_time} ms.]")
 
     plt.show()
 
