@@ -5,10 +5,10 @@ import time
 
 import numpy as np
 import matplotlib.pyplot as plt
-import skfuzzy as fuzz
+from sklearn import cluster
 import torch
 
-from aki.unsupervised_learning.cluster_analysis.fuzzy_c_means import FuzzyCMeans
+from aki.unsupervised_learning.cluster_analysis.k_means import KMeans
 from aki.utils.data import generate_normal_data
 from aki.utils.pyotrch import get_device
 
@@ -22,36 +22,35 @@ def main(parameters):
     x_points, y_points, labels = parameters['input_data']
     cluster_data = np.vstack([x_points, y_points])
 
-    # Run the fcm sci-kit fuzzy implementation.
-    logger.info("Running FCM sci-kit fuzzy implementation...")
+    # Run the sci-kit k-means implementation.
+    logger.info("Running scikit k-means implementation...")
     start = time.time()
-    sk_centroids, sk_membership, _, _, _, _, _ = fuzz.cluster.cmeans(cluster_data,
-                                                                     parameters['n_clusters'],
-                                                                     parameters['fuzziness'],
-                                                                     error=parameters['error'],
-                                                                     maxiter=parameters['max_iterations'])
+    sk_result = cluster.KMeans(n_clusters=parameters['n_clusters'],
+                               max_iter=parameters['max_iterations'],
+                               tol=parameters['error'],
+                               init='random').fit(cluster_data.T)
     end = time.time()
     sk_time = round((end - start) * 1e3, 2)
 
-    # Run the fcm pytorch implementation.
-    logger.info("Running FCM PyTorch implementation...")
-    aki_fcm = FuzzyCMeans(parameters['device'])
+    # Run the k-means PyTorch implementation.
+    logger.info("Running PyTorch k-means implementation...")
+    aki_km = KMeans(parameters['device'])
     tensor_data = torch.from_numpy(cluster_data.T).unsqueeze(dim=0).float().to(parameters['device'])
     start = time.time()
-    aki_centroids, aki_membership = aki_fcm.fit(tensor_data,
-                                                n_clusters=parameters['n_clusters'],
-                                                fuzziness=parameters['fuzziness'],
-                                                max_iterations=parameters['max_iterations'],
-                                                eps=parameters['error'])
+    aki_centroids, aki_distance = aki_km.fit(tensor_data,
+                                             n_clusters=parameters['n_clusters'],
+                                             max_iterations=parameters['max_iterations'],
+                                             eps=parameters['error'])
     end = time.time()
     pytorch_time = round((end - start) * 1e3, 2)
 
     # Retrieve scikit results.
-    sk_labels = np.argmax(sk_membership, axis=0)
+    sk_centroids = sk_result.cluster_centers_
+    sk_labels = sk_result.labels_
 
     # Retrieve aki results.
     aki_centroids = aki_centroids.detach().cpu().numpy()
-    aki_labels = np.argmax(aki_membership.detach().cpu().numpy().squeeze(), axis=-1)
+    aki_labels = np.argmin(aki_distance.detach().cpu().numpy().squeeze(), axis=-1)
 
     # Visualize the test data.
     fig, ax = plt.subplots(1, 2, figsize=(15, 15))
@@ -70,7 +69,7 @@ def main(parameters):
     ax[1].plot(aki_centroids[2, 0], aki_centroids[2, 1], 'X', color='red')
 
     ax[0].set_title(
-        f"Test data: {n_points} points x {parameters['n_clusters']} clusters. [skfuzzy ~{sk_time} ms.]")
+        f"Test data: {n_points} points x {parameters['n_clusters']} clusters. [scikit ~{sk_time} ms.]")
     ax[1].set_title(
         f"Test data: {n_points} points x {parameters['n_clusters']} clusters. [aki ~{pytorch_time} ms.]")
 
@@ -90,7 +89,6 @@ if __name__ == "__main__":
     # Define the example parameters.
     example_parameters = {'n_clusters': 3,
                           'max_iterations': 100,
-                          'fuzziness': 2.0,
                           'error': 5e-3,
                           'device': get_device(),
                           'input_data': generate_normal_data(n_samples, mean_list, std_list),
