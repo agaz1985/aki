@@ -14,7 +14,7 @@ class KMeans(ModelBase):
     def _init_parameters(self, input_data: torch.Tensor, n_clusters: int):
         self._n_clusters = n_clusters
         # Use Forgy initialization method for the k centroids.
-        indexes = torch.multinomial(torch.ones(input_data.T.shape), self._n_clusters, replacement=False).T
+        indexes = torch.multinomial(torch.ones(input_data.T.shape), self._n_clusters, False).T.to(self._device)
         self._c = torch.gather(input_data, 0, indexes)
 
     def _expectation_step(self, x):
