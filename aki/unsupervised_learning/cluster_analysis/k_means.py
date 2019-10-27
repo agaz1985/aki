@@ -12,7 +12,7 @@ class KMeans(ModelBase):
     """
 
     def __init__(self, device: torch.device):
-        super().__init__(device)
+        super().__init__(device, "k-means")
 
     def _init_parameters(self, input_data: torch.Tensor, n_clusters: int):
         self._n_clusters = n_clusters

@@ -12,7 +12,7 @@ class FuzzyCMeans(ModelBase):
     """
 
     def __init__(self, device: torch.device):
-        super().__init__(device)
+        super().__init__(device, "fuzzy-c-means")
 
     def _init_parameters(self, n_clusters: int, n_samples: int, n_features: int, fuzziness: float):
         self._n_clusters = n_clusters
