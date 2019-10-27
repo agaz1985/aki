@@ -1,3 +1,4 @@
+import h5py
 import torch
 
 from torch.distributions import Dirichlet
@@ -30,8 +31,8 @@ class FuzzyCMeans(ModelBase):
         numerator = (1 / (distance ** exponent))
         self._w.data = numerator / torch.sum(numerator, dim=1).unsqueeze(dim=1)
 
-    def fit(self, x: torch.Tensor, n_clusters: int, fuzziness: float = 2.0, max_iterations: int = 1000,
-            eps: float = 5e-3):
+    def _fit_implementation(self, x: torch.Tensor, n_clusters: int, fuzziness: float = 2.0, max_iterations: int = 1000,
+                            eps: float = 5e-3):
         """
         Run the fuzzy c-means cluster analysis fit on the input data.
         :param x: input data as a Tensor with dimensions [batch, n_samples, n_features].
@@ -60,7 +61,6 @@ class FuzzyCMeans(ModelBase):
             self._logger.debug(f"Iteration {iteration}, mean error: {error}")
             iteration += 1
 
-        self._is_fit = True
         return self._c, self._w.unsqueeze(dim=0).view([n_batches, n_samples, self._n_clusters])
 
     def _predict_implementation(self, x):
@@ -68,3 +68,15 @@ class FuzzyCMeans(ModelBase):
         x = x.reshape([n_batches * n_samples, n_features])
         self._update_membership_matrix(x)
         return self._c, self._w.unsqueeze(dim=0).view([n_batches, n_samples, self._n_clusters])
+
+    def _save_implementation(self, state_object: h5py.File):
+        state_object.create_dataset('centroids', data=self._c.detach().cpu().numpy())
+        state_object.create_dataset('n_clusters', data=self._n_clusters)
+        state_object.create_dataset('fuzziness', data=self._p)
+        state_object.create_dataset('membership', data=self._w.detach().cpu().numpy())
+
+    def _load_implementation(self, state_object: h5py.File):
+        self._c = torch.from_numpy(state_object['centroids'][()]).to(self._device)
+        self._n_clusters = state_object['n_clusters'][()]
+        self._p = state_object['fuzziness'][()]
+        self._w = torch.from_numpy(state_object['membership'][()]).to(self._device)
