@@ -9,10 +9,10 @@ class Version:
         self.set(version)
 
     def set(self, version_string: str):
-        self._major, self._minor, self._patch = version_string.split('.')
+        self._major, self._minor, self._patch = [int(v) for v in version_string.split('.')]
 
     def get_as_string(self) -> str:
-        return '.'.join(self.get_as_array())
+        return '.'.join([str(v) for v in self.get_as_array()])
 
     def get_as_array(self):
         return [self._major, self._minor, self._patch]
