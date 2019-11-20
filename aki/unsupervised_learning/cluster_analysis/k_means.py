@@ -1,8 +1,6 @@
 import h5py
 import torch
 
-from pathlib import Path
-
 from aki.utils.model import ModelBase
 
 

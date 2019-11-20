@@ -53,6 +53,8 @@ class ModelBase:
         return self._predict_implementation(*argparams, **kwparams)
 
     def save(self, model_filepath: Path):
+        if not self._is_fit:
+            raise RuntimeError("Model has not been trained yet. Call fit and re-try.")
         with h5py.File(str(model_filepath), 'w') as state_object:
             self._save_implementation(state_object)
             state_object.create_dataset('is_fit', data=self._is_fit)
