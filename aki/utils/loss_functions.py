@@ -3,10 +3,11 @@ from torch.nn.modules.module import Module
 
 
 class HingeLoss(Module):
-    def __init__(self, C: float = 1.0):
+    def __init__(self, c: float = 1.0):
         super().__init__()
-        self._C = C
+        self._c = 0.5 * c
+        self._clamp = torch.nn.ReLU()
 
     def forward(self, pred, target, w):
-        loss = torch.nn.ReLU()(1 - pred * target).squeeze()
-        return torch.sum(loss, dim=0) + (0.5 * self._C) * w.norm(2)
+        loss = self._clamp(1 - pred * target)
+        return torch.sum(loss, dim=0) + self._c * w.norm(2)

@@ -13,7 +13,7 @@ from sklearn.datasets.samples_generator import make_blobs
 # creating datasets X containing n_samples
 # Y containing two classes
 n_classes = 2
-X, y = make_blobs(n_samples=10, centers=n_classes,
+X, y = make_blobs(n_samples=int(1e5), centers=n_classes,
                   random_state=0, cluster_std=0.30)
 
 clf = LinearSVC(random_state=0, tol=1e-5)
@@ -35,7 +35,7 @@ y_tensor = torch.from_numpy(y).to(get_device()).float()
 y_tensor = y_tensor.unsqueeze(dim=-1)
 
 start = time.time()
-prob, w, b = aki_svm.fit(x_tensor, y_tensor, n_classes=1, eps=1e-5, lr=3e-4, max_number_iterations=1000, C=1.0)
+prob, w, b = aki_svm.fit(x_tensor, y_tensor, n_classes=1, eps=1e-3, lr=3e-4, max_number_iterations=1000, C=1.0)
 end = time.time() - start
 print(f"aki: {end}")
 

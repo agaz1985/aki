@@ -51,6 +51,7 @@ class SVM(ModelBase):
             loss = self._loss(pred, y, self._model._linear.weight)
             loss.backward()
             self._optimizer.step()
+
             if last_loss is not None and abs(last_loss - loss.item()) < eps:
                 break
             last_loss = loss.item()
